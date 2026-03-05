@@ -1,0 +1,23 @@
+thesis
+
+Air quality impacts of crop residue burning in India and mitigation alternatives (Nature, 2022)
+https://www.nature.com/articles/s41467-022-34093-z
+- use global fire emissions data
+- better to burn a few hours earlier
+- theres a limited amount of time for farmers to burn residues
+- so policies that change the time (i.e. April to may) might be pointless
+- but changing the time in the day might be very useful cause of some scientific shit (depth of PBL - peaks at 13:00 in India (depends on latitude), burning during the peak is better for dispersion)
+- they don't compute the local effects of shifting the time of burning to downind areas (i.e. delhi)
+
+https://www.mdpi.com/1660-4601/16/5/832 - not very interesting
+https://www.science.org/doi/10.1126/science.aaw4085
+https://www.nature.com/articles/s41893-019-0304-4 - timing of burning matters
+
+Data - 
+https://www.globalfiredata.org/ 
+Years- 2002-2020 included
+daily data in 0.25 on 0.25 grid
+https://daac.ornl.gov/VEGETATION/guides/fire_emissions_v4_R1.html 
+
+
+https://www.thinkglobalhealth.org/article/tangled-problem-sugarcane-burning-thailand#:~:text=Farmers%20locked%20into%20contract%20farming,burning%20their%20fields%20at%20night.
