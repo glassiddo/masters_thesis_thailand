@@ -1,19 +1,21 @@
 source("code/setup.R")
 
-## this takes era5 climatic variables. it gets values from the raster for each grid cell
+## this takes era5 climatic variables. 
+## it gets values from the raster for each grid cell
 ## then for each admin unit in my data, check for intersect with the cells
 ## and calculate the average for each month/year for each admin unit 
-## based on all cells that intersect (not accounting for share of intersection, to simplify)
+## based on all cells that intersect
+## (not accounting for share of intersection, to simplify - could be changed)
 
 process_raster <- function(file_path, value_name) {
-  rast(file_path) %>% 
-    as.data.frame(xy = TRUE) %>% 
+  rast(file_path) |> 
+    as.data.frame(xy = TRUE) |> 
     pivot_longer(
       cols = -c(x, y), # select all columns except for x and y
       names_to = "layer",
       values_to = value_name  
-    ) %>%
-    filter(!is.na(.data[[value_name]])) %>%  # .data[[]] for dynamic column reference
+    ) |> 
+    filter(!is.na(.data[[value_name]])) |> # .data[[]] for dynamic column reference
     mutate(
       year = as.numeric(paste0("20", str_extract(layer, "\\d{2}(?=_\\d{2}$)" ))),
       month = as.numeric(str_extract(layer, "\\d{2}$")), 
@@ -28,11 +30,11 @@ temper <- process_raster("raw/climatic/ERA5_temperature_2004_2012_MultiBand.tif"
 precip <- process_raster("raw/climatic/ERA5_precipitation_2004_2012_MultiBand.tif", "precipitation")
 dew_temp <- process_raster("raw/climatic/ERA5_dew_temp_2004_2012_MultiBand.tif", "dew_temp")
 
-climatic <- v_wind %>% 
-  full_join(u_wind, by = c("x", "y", "year", "month")) %>% 
-  full_join(skin_temp, by = c("x", "y", "year", "month")) %>% 
-  full_join(temper, by = c("x", "y", "year", "month")) %>% 
-  full_join(precip, by = c("x", "y", "year", "month")) %>% 
+climatic <- v_wind |> 
+  full_join(u_wind, by = c("x", "y", "year", "month")) |> 
+  full_join(skin_temp, by = c("x", "y", "year", "month")) |> 
+  full_join(temper, by = c("x", "y", "year", "month")) |> 
+  full_join(precip, by = c("x", "y", "year", "month")) |> 
   full_join(dew_temp, by = c("x", "y", "year", "month")) 
 
 create_grid_polygons <- function(x, y, res_x = 0.1, res_y = 0.1) {
@@ -54,16 +56,16 @@ create_grid_polygons <- function(x, y, res_x = 0.1, res_y = 0.1) {
 
 rm(temper, u_wind, v_wind, precip, skin_temp, dew_temp)
 
-grid_sf <- climatic %>%
-  select(x, y) %>%
-  distinct() %>% 
-  mutate(grid_id = row_number()) %>%
-  rowwise() %>%
-  mutate(geometry = list(create_grid_polygons(x, y))) %>%
+grid_sf <- climatic |>
+  select(x, y) |>
+  distinct() |> 
+  mutate(grid_id = row_number()) |>
+  rowwise() |>
+  mutate(geometry = list(create_grid_polygons(x, y))) |>
   st_as_sf(crs = 4326)
 
-climatic <- climatic %>%
-  left_join(grid_sf %>% st_set_geometry(NULL), by = c("x", "y")) %>% 
+climatic <- climatic |>
+  left_join(grid_sf |> st_set_geometry(NULL), by = c("x", "y")) |> 
   select(-x, -y, grid_id, year, month, everything())
 
 
@@ -90,11 +92,11 @@ summarize_to_admin_units <- function(admin_units, admin_id_col, grid_sf, era_com
   # combine all
   grid_to_admin_mapping <- bind_rows(mapping_list)
   # merge with the admin mapping
-  admin_climate_merged <- era_combined %>%
+  admin_climate_merged <- era_combined |>
     inner_join(grid_to_admin_mapping, by = "grid_id", relationship = "many-to-many")
   
   # convert to dt for speed
-  admin_climate_merged <- admin_climate_merged %>%
+  admin_climate_merged <- admin_climate_merged |>
     as.data.table()
   
   # calculate averages by year, month, and admin id
@@ -110,7 +112,7 @@ summarize_to_admin_units <- function(admin_units, admin_id_col, grid_sf, era_com
   return(admin_climate_results)
 }
 
-all_units_adm1 <- read_sf(here(build.dir, "units", "adm1_units_detailed.shp")) %>% 
+all_units_adm1 <- read_sf(here(build.dir, "units", "adm1_units_detailed.shp")) |> 
   select(adm1_id)
   
 admin1_climate_results <- summarize_to_admin_units(

@@ -6,7 +6,7 @@ roads_mya_raw <- read_sf(here(raw.dir, "roads", "hotosm_mmr_roads_lines_shp.shp"
 roads_lao_raw <- read_sf(here(raw.dir, "roads", "hotosm_lao_roads_lines_shp.shp"))
 
 process_roads <- function(roads_file) {
-  roads_file %>%
+  roads_file |>
     filter(
       highway %in% c(
         # filter to only actual "highways". 
@@ -19,7 +19,7 @@ process_roads <- function(roads_file) {
       "unclassified"
       ), # lowest rank of a public road usable by motor cars
       !surface %in% c("gravel", "fine_gravel", "unpaved") # exclude those
-    ) %>%
+    ) |>
     mutate(len = as.numeric(st_length(geometry)))
 }
 
@@ -31,13 +31,13 @@ roads_all <- bind_rows(roads_thai, roads_mya, roads_lao)
 
 rm(roads_thai, roads_mya)
 
-roads_all_asphalt <- roads_all %>% 
+roads_all_asphalt <- roads_all |> 
   filter(
     grepl("asphalt", surface)
   )
 
-st_write(roads_all %>% select(geometry), here(build.dir, "roads", "main_roads.shp"), append = FALSE)
-st_write(roads_all_asphalt %>% select(geometry), here(bulid.dir, "roads", "main_asphalt_roads.shp"), append = FALSE)
+st_write(roads_all |> select(geometry), here(build.dir, "roads", "main_roads.shp"), append = FALSE)
+st_write(roads_all_asphalt |> select(geometry), here(bulid.dir, "roads", "main_asphalt_roads.shp"), append = FALSE)
 
 rm(roads_all, roads_all_asphalt)
 gc()
