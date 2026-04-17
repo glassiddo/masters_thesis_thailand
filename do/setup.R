@@ -9,7 +9,9 @@ pacman::p_load(
   tidyverse, stargazer, ggplot2, purrr, magrittr, stringr, dtplyr,
   geodata, spData, sf, terra, maps, sp, raster, exactextractr, # spatial analysis
   rnaturalearth, rnaturalearthdata, # country/continent maps
-  lmtest, fixest # twfe + sun and abraham event study
+  lmtest, fixest, # twfe + sun and abraham event study
+  plotrix, cowplot, patchwork,
+  kableExtra, ggpubr
 )
 rm(list = ls())
 gc()

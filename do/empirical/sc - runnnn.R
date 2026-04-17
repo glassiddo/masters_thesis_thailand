@@ -14,7 +14,7 @@ run_synth_analysis <- function(outcomes_list, datasets_to_run, treated_units,
       current_period_name <- unique(period_data$period)
       period_data <- as.data.frame(period_data)
       
-      dat <- create_multi_synth_dataprep(
+      dat <- cv_pensynth(
         data = period_data,
         predictors = predictors,
         special.predictors = synth_special_predictors,

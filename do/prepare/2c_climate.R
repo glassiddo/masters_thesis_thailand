@@ -1,4 +1,4 @@
-source("code/setup.R")
+source("do/setup.R")
 
 ## this takes era5 climatic variables. 
 ## it gets values from the raster for each grid cell
@@ -23,12 +23,12 @@ process_raster <- function(file_path, value_name) {
     ) 
 }
 
-v_wind <- process_raster("raw/climatic/ERA5_v_wind_2004_2012_MultiBand.tif", "v_wind")
-u_wind <- process_raster("raw/climatic/ERA5_u_wind_2004_2012_MultiBand.tif", "u_wind")
-skin_temp <- process_raster("raw/climatic/ERA5_skin_temp_2004_2012_MultiBand.tif", "skin_temp")
-temper <- process_raster("raw/climatic/ERA5_temperature_2004_2012_MultiBand.tif", "temperature")
-precip <- process_raster("raw/climatic/ERA5_precipitation_2004_2012_MultiBand.tif", "precipitation")
-dew_temp <- process_raster("raw/climatic/ERA5_dew_temp_2004_2012_MultiBand.tif", "dew_temp")
+v_wind <- process_raster("data/raw/climatic/ERA5_v_wind_2004_2012_MultiBand.tif", "v_wind")
+u_wind <- process_raster("data/raw/climatic/ERA5_u_wind_2004_2012_MultiBand.tif", "u_wind")
+skin_temp <- process_raster("data/raw/climatic/ERA5_skin_temp_2004_2012_MultiBand.tif", "skin_temp")
+temper <- process_raster("data/raw/climatic/ERA5_temperature_2004_2012_MultiBand.tif", "temperature")
+precip <- process_raster("data/raw/climatic/ERA5_precipitation_2004_2012_MultiBand.tif", "precipitation")
+dew_temp <- process_raster("data/raw/climatic/ERA5_dew_temp_2004_2012_MultiBand.tif", "dew_temp")
 
 climatic <- v_wind |> 
   full_join(u_wind, by = c("x", "y", "year", "month")) |> 
@@ -122,5 +122,5 @@ admin1_climate_results <- summarize_to_admin_units(
   era_combined = climatic
 )
 
-fwrite(admin1_climate_results, here(build.dir, "adm1_climatic_date.csv"))
+saveRDS(admin1_climate_results, here(build.dir, "climate", "adm1_climatic_date.rds"))
 

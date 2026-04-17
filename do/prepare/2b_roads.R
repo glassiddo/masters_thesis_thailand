@@ -1,12 +1,17 @@
-source("code/setup.R")
+source("do/setup.R")
 
 # read osm country road data
-roads_thai_raw <- read_sf(here(raw.dir, "roads", "hotosm_tha_roads_lines_shp.shp")) 
-roads_mya_raw <- read_sf(here(raw.dir, "roads", "hotosm_mmr_roads_lines_shp.shp"))
-roads_lao_raw <- read_sf(here(raw.dir, "roads", "hotosm_lao_roads_lines_shp.shp"))
+countries <- list(
+  thai = "hotosm_tha_roads_lines_shp.shp",
+  mya  = "hotosm_mmr_roads_lines_shp.shp",
+  lao  = "hotosm_lao_roads_lines_shp.shp"
+)
 
 process_roads <- function(roads_file) {
-  roads_file |>
+  
+  path <- here(raw.dir, "roads", roads_file)
+  
+  read_sf(path) |> 
     filter(
       highway %in% c(
         # filter to only actual "highways". 
@@ -16,29 +21,30 @@ process_roads <- function(roads_file) {
       "primary", # All 3-digit national highways, or more than 90% dual-carriageway + >25 km long
       "secondary", #  4-digit national highways,
       "tetiary", # rural roads
-      "unclassified"
-      ), # lowest rank of a public road usable by motor cars
-      !surface %in% c("gravel", "fine_gravel", "unpaved") # exclude those
+      "unclassified" # lowest rank of a public road usable by motor cars
+      )
+    ) |> 
+    filter_out(
+      surface %in% c("gravel", "fine_gravel", "unpaved") # exclude those
     ) |>
-    mutate(len = as.numeric(st_length(geometry)))
+    mutate(len = as.numeric(st_length(geometry))) 
 }
 
-roads_thai <- process_roads(roads_thai_raw) 
-roads_mya  <- process_roads(roads_mya_raw)
-roads_lao  <- process_roads(roads_lao_raw)
-
-roads_all <- bind_rows(roads_thai, roads_mya, roads_lao)
-
-rm(roads_thai, roads_mya)
+roads_all <- map_dfr(countries, process_roads)
 
 roads_all_asphalt <- roads_all |> 
   filter(
     grepl("asphalt", surface)
   )
 
-st_write(roads_all |> select(geometry), here(build.dir, "roads", "main_roads.shp"), append = FALSE)
-st_write(roads_all_asphalt |> select(geometry), here(bulid.dir, "roads", "main_asphalt_roads.shp"), append = FALSE)
+st_write(
+  roads_all |> select(geometry), 
+  here(build.dir, "roads", "main_roads.shp"), 
+  append = FALSE
+)
 
-rm(roads_all, roads_all_asphalt)
-gc()
-
+st_write(
+  roads_all_asphalt |> select(geometry), 
+  here(build.dir, "roads", "main_asphalt_roads.shp"), 
+  append = FALSE
+)

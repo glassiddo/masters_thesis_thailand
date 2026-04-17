@@ -4,7 +4,7 @@ source("do/setup.R")
 all <- read_sf(here(build.dir, "units", "adm1_units_detailed.shp")) 
 
 admin_units <- read_sf(here(build.dir, "units", "adm1_units_detailed.shp")) |> 
-  select(adm0_id, adm1_id)
+  select(-adm1_area)
 
 process_fires <- function(data_paths, units) {
   data_paths |> 
@@ -18,7 +18,7 @@ process_fires <- function(data_paths, units) {
       CONFIDENCE > 30 # ignore fires that are very uncertain
     ) |>
     st_join(units, join = st_within) |> # for each fire, check in which adm2 it is
-    filter(!is.na(adm1_id)) # remove fires outside
+    filter(!is.na(adm1_id)) # remove fires outside the units of interest
 }
 
 ### modis ----
@@ -40,12 +40,12 @@ files <- list(
 modis_fires <- process_fires(files$modis, admin_units) |> 
   mutate(fire_id = row_number()) 
 
-st_write(modis_fires, here(build.dir, "modis_with_region_2206.gpkg"), delete_dsn = TRUE)
+st_write(modis_fires, here(build.dir, "fires", "modis_with_region.gpkg"), delete_dsn = TRUE)
 
 # only keep fire id and date for the file uploaded to gee
 modis_for_gee <- modis_fires |> select(fire_id, date)
 
-st_write(modis_for_gee, here(build.dir, "fires for gee", "modis_with_region_for_gee_1606.shp"), append = FALSE)
+st_write(modis_for_gee, here(build.dir, "fires for gee", "modis_with_region_for_gee.shp"), append = FALSE)
 
 # test for duplicates
 modis_fires |> 
@@ -58,5 +58,15 @@ gc()
 viirs_fires <- process_fires(files$viirs, admin_units) |> 
   mutate(fire_id = row_number())
 
-st_write(viirs_fires, here(build.dir, "viirs_with_region_2906.gpkg"), delete_dsn = TRUE)
+st_write(viirs_fires, here(build.dir, "fires", "viirs_with_region.gpkg"), delete_dsn = TRUE)
+
+# only keep fire id and date for the file uploaded to gee
+viirs_for_gee <- viirs_fires |> select(fire_id, date)
+
+st_write(viirs_for_gee, here(build.dir, "fires for gee", "viirs_with_region_for_gee.shp"), append = FALSE)
+
+# test for duplicates
+viirs_fires |> 
+  st_drop_geometry() |> 
+  janitor::get_dupes(fire_id)
 

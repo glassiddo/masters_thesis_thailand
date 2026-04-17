@@ -27,7 +27,7 @@ myanmar <-
   st_make_valid() |> 
   # transform adm2_en into adm1_en as otherwise units are 
   # much larger than the ones in thailand and laos
-  summarise(geometry = st_union(geometry), by = ADM2_EN) |>
+  summarise(geometry = st_union(geometry), .by = ADM2_EN) |> 
   rename(
     ### take one admin level lower for myanmar as equivaent to thailand and laos
     ADM1_EN = ADM2_EN
@@ -41,10 +41,9 @@ all_units <- bind_rows(adm1, myanmar) |>
     adm1_id = row_number(),
     adm1_area = as.numeric(st_area(geometry)/100000000)
   ) |>
-  group_by(ADM0_EN) |>
   mutate(
-    adm0_id = cur_group_id()
-  ) |>
-  ungroup()
+    adm0_id = cur_group_id(),
+    .by = ADM0_EN
+  ) 
 
 write_sf(all_units, here(build.dir, "units", "adm1_units_detailed.shp"), append = F)

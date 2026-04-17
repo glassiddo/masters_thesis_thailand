@@ -1,4 +1,4 @@
-source("code/setup.R")
+source("do/setup.R")
 
 ## remove fires taking place in the same day or in consecutive days 
 
@@ -15,10 +15,10 @@ remove_fire_duplicates_repeated <- function(fires_data, fire_source) {
   
   ### this code recognizes repeated fires - ones in the same 1km for modis (or viirs 375m)
   ### that take place in the same day or in repeated days, which might be double counted
-  fires_lazy <- fires_data %>%
+  fires_lazy <- fires_data |> 
     # drop geometry, convert to data table format (dtplyr)
-    st_drop_geometry() %>%
-    lazy_dt() %>%
+    st_drop_geometry() |> 
+    lazy_dt() |> 
     ### get ids for coordinates, 
     ### round based on the grid size to get stuff in the same parameter
     ### not gonna work perfectly but rough approximation
@@ -27,16 +27,15 @@ remove_fire_duplicates_repeated <- function(fires_data, fire_source) {
     mutate(
       grid_x = round(LONGITUDE / grid_size),
       grid_y = round(LATITUDE / grid_size)
-    ) %>% 
+    ) |> 
     mutate(
       ### set an id for spatial cluster (each 1km bounding box)
       spatial_cluster_id = as.numeric(as.factor(paste(grid_x, grid_y))),
       ### and one for spatial x day combination
       spatial_day_cluster_id = as.numeric(as.factor(paste(date, grid_x, grid_y)))
-    ) %>% 
+    ) |> 
     ### now recognize which ones were taken in the same spatial cluster in repeated days
-    arrange(spatial_cluster_id, date) %>%
-    group_by(spatial_cluster_id) %>%
+    arrange(spatial_cluster_id, date) |> 
     mutate(
       # compute the gap from the last fire in the same spatial cluster
       # the idea is to recognize duplicates
@@ -46,42 +45,36 @@ remove_fire_duplicates_repeated <- function(fires_data, fire_source) {
       # if theres more than one fire, spatial_temporal_cluster_id is different
       # except for cases where there are repeated fires (including fires in the same day)
       day_gap = c(1, diff(date)),
-      temporal_group = cumsum(day_gap > 1)
-    ) %>%
-    ungroup() %>% 
+      temporal_group = cumsum(day_gap > 1),
+      .by = spatial_cluster_id
+    ) |> 
     mutate(
       spatial_temporal_cluster_id = 
         as.numeric(as.factor(paste(spatial_cluster_id, temporal_group)))
-    ) %>% 
+    ) 
+
+  col_name_dup <- paste0(fire_source, "_no_duplicates")
+  col_name_rep <- paste0(fire_source, "_no_repeated")
+  
+  without_single_day_fires <- fires_lazy |> 
+    group_by(spatial_day_cluster_id) |> 
+    filter(n() == 1) |> 
+    ungroup() |> 
+    summarise(
+      !!col_name_dup := n(),
+      .by = c(adm1_id, date)
+    ) |> 
     as_tibble()
   
-  duplicates_single_fire_day <- fires_lazy %>% 
-    lazy_dt() %>% 
-    group_by(spatial_day_cluster_id) %>% 
-    filter(n() > 1) %>% 
-    select(spatial_day_cluster_id) %>% 
-    distinct() %>% 
-    as_tibble() %>% 
-    pull()
-  
-  duplicates_repeated_fires <- fires_lazy %>% 
-    lazy_dt() %>% 
-    group_by(spatial_temporal_cluster_id) %>% 
-    filter(n() > 1) %>% 
-    select(spatial_temporal_cluster_id) %>% 
-    distinct() %>% 
-    as_tibble() %>% 
-    pull()
-  
-  without_single_day_fires <- fires_lazy %>% 
-    filter(
-      !spatial_day_cluster_id %in% duplicates_single_fire_day
-    )
-  
-  without_repeated_fires <- fires_lazy %>% 
-    filter(
-      !spatial_temporal_cluster_id %in% duplicates_repeated_fires
-    )
+  without_repeated_fires <- fires_lazy |> 
+    group_by(spatial_temporal_cluster_id) |> 
+    filter(n() == 1) |> 
+    ungroup() |> 
+    summarise(
+      !!col_name_rep := n(),
+      .by = c(adm1_id, date)
+    ) |> 
+    as_tibble()
   
   return(list(
     without_single_day_fires = without_single_day_fires,
@@ -90,21 +83,21 @@ remove_fire_duplicates_repeated <- function(fires_data, fire_source) {
 }
 
 ### run for modis -------
-modis_fires <- st_read(here(build.dir, "modis_with_region_2206.gpkg"))
+modis_fires <- st_read(here(build.dir, "fires", "modis_with_region.gpkg"))
 modis_filtered <- remove_fire_duplicates_repeated(modis_fires, "modis")
 
-modis_no_duplicate <- modis_filtered$without_single_day_fires
-modis_no_repeated <- modis_filtered$without_repeated_fires
+rm(modis_fires)
+gc()
 
-fwrite(modis_no_duplicate, here(build.dir, "fires", "modis_no_duplicate_0407.csv"))
-fwrite(modis_no_repeated, here(build.dir, "fires", "modis_no_repeated_0407.csv"))
+saveRDS(modis_filtered$without_single_day_fires, here(build.dir, "fires", "modis_no_duplicate.rds"))
+saveRDS(modis_filtered$without_repeated_fires, here(build.dir, "fires", "modis_no_repeated.rds"))
+
+rm(modis_filtered)
+gc()
 
 ### run for viirs -------
-viirs_fires <- st_read(here(build.dir, "viirs_with_region_2906.gpkg"))
+viirs_fires <- st_read(here(build.dir, "fires", "viirs_with_region.gpkg"))
 viirs_filtered <- remove_fire_duplicates_repeated(viirs_fires, "viirs")
 
-viirs_no_duplicate <- viirs_filtered$without_single_day_fires
-viirs_no_repeated <- viirs_filtered$without_repeated_fires
-
-fwrite(viirs_no_duplicate, here(build.dir, "fires", "viirs_no_duplicate_0407.csv"))
-fwrite(viirs_no_repeated, here(build.dir, "fires", "viirs_no_repeated_0407.csv"))
+saveRDS(viirs_filtered$without_single_day_fires, here(build.dir, "fires", "viirs_no_duplicate.rds"))
+saveRDS(viirs_filtered$without_repeated_fires, here(build.dir, "fires", "viirs_no_repeated.rds"))
