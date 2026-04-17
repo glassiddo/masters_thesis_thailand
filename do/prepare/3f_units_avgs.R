@@ -6,7 +6,8 @@ source("do/setup.R")
 # load admin 1 units
 admin_units <- read_sf(here(build.dir, "units", "adm1_units_detailed.shp"))
 
-# load raster data
+# load raster data from GEE 
+# TODO - add this to the code
 t_raster <- rast(here(build.dir, "SEA_combined_layers.tif"))
 
 # process crops to get the total agricultural harvest data -----
@@ -19,7 +20,7 @@ prod_sf <- fread(here(
   rename_with(~ gsub("_a$", "", .), ends_with("_a")) |>  # remove the _a for all columns
   select(-c("iso3", "unit", "name_cntr", "name_adm1", "name_adm2")) |> 
   mutate(
-    total_prod = rowSums(select_if(st_drop_geometry(.), is.numeric), na.rm = TRUE),
+    total_prod = rowSums(pick(where(is.numeric)), na.rm = TRUE),
   ) |> 
   select(total_prod) |> 
   st_set_crs(st_crs("EPSG:4326")) # might need to do everything in another crs
@@ -33,6 +34,9 @@ tree_share   <- exact_extract(t_raster$trees, admin_units, 'mean')
 crop_share   <- exact_extract(t_raster$crops, admin_units, 'mean')
 urban_share  <- exact_extract(t_raster$urban_binary, admin_units, 'mean')
 avg_elev     <- exact_extract(t_raster$elevation_mean, admin_units, 'mean')
+
+# replace NAs with 0s
+urban_share[is.na(urban_share)] <- 0
   
 admin_units$tree_share   <- tree_share
 admin_units$crop_share   <- crop_share

@@ -1,6 +1,8 @@
 source("do/setup.R")
 
-all_units_1 <- read_sf(here(build.dir, "units", "adm1_units_detailed.shp"))
+# is rather late in the hierarchy because its independent of the fires
+# and is very light, unlike the fires
+# so better to keep it here for easier changes
 
 bans <- fread(here(raw.dir, "bans", "ban dates v2.csv")) |>
   select(Region, `Ban start`, `Ban end`, `Certainty (quite random)`) |> 

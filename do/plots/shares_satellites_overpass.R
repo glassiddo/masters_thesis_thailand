@@ -2,9 +2,9 @@ source("do/setup.R")
 
 # shares of fires in each satellite overpass
 
-modis_fires <- st_read(here(build.dir, "modis_with_region_2206.gpkg"))
+modis_fires <- st_read(here(build.dir, "fires", "modis_with_region.gpkg"))
 
-grid <- fread(here(out.dir, "grid_1606.csv"))
+grid <- readRDS(here(out.dir, "grid.rds"))
 
 # define units
 all_units <- grid %>%
@@ -20,8 +20,8 @@ control_units <- setdiff(all_units, treated_units)
 
 rm(grid)
 
-bounds <- modis_fires %>% 
-  st_drop_geometry() %>% 
+bounds <- modis_fires |> 
+  st_drop_geometry() |>
   mutate(
     month = month(date),
     period = case_when(
@@ -44,11 +44,13 @@ bounds <- modis_fires %>%
       DAYNIGHT == "N" & SATELLITE == "Terra" ~ "terra_night",
       TRUE ~ NA_character_
     )
-  ) %>%
-  group_by(region, period, window, month) %>%
-  summarise(n = n(), .groups = "drop") %>%
-  pivot_wider(names_from = window, values_from = n) %>% 
-  filter(region == "North Thailand", period == "pre", month < 6) %>% 
-  select(-period, -region) %>% 
-  janitor::adorn_totals("row") %>% 
+  ) |> 
+  summarise(
+    n = n(), 
+    .by = c(region, period, window, month)
+    ) |> 
+  pivot_wider(names_from = window, values_from = n) |>
+  filter(region == "North Thailand", period == "pre", month < 6) |>
+  select(-period, -region) |>
+  janitor::adorn_totals("row") |>
   mutate(month = ifelse(month == 15, "Total", month))
