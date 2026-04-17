@@ -1,15 +1,15 @@
 {
     "dialog-state": {
-        "query": "treated_units",
+        "query": "source(\"code/setup.R\")",
         "path": "/do",
         "regex": false,
         "caseSensitive": false,
         "wholeWord": false,
         "filePatterns": [],
-        "useGitGrep": false,
+        "useGitGrep": true,
         "excludeGitIgnore": true,
         "excludeFilePatterns": [],
-        "resultsCount": 25,
+        "resultsCount": 7,
         "errorCount": 0,
         "replaceErrors": "",
         "projectRelative": true
