@@ -1,2 +1,19 @@
-data/
-.Rproj.user
+# Data (local-only)
+/data/
+
+# Writing / scratch (local-only)
+/notes/
+/old/
+
+# Plots (generated)
+/plots/
+
+# R / RStudio
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj
+
+# Project-specific ignores
+do/himawari_wip.R
