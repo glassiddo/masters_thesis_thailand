@@ -1,6 +1,6 @@
 {
     "dialog-state": {
-        "query": "source(\"code/setup.R\")",
+        "query": "create_multi_synth_dataprep",
         "path": "/do",
         "regex": false,
         "caseSensitive": false,
@@ -9,7 +9,7 @@
         "useGitGrep": true,
         "excludeGitIgnore": true,
         "excludeFilePatterns": [],
-        "resultsCount": 7,
+        "resultsCount": 5,
         "errorCount": 0,
         "replaceErrors": "",
         "projectRelative": true
