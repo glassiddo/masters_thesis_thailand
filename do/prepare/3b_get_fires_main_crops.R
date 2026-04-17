@@ -28,7 +28,7 @@ prod_sf <- prod_sf |>
   select(max_crop, crop_production_q) |> 
   st_set_crs(st_crs("EPSG:4326"))
 
-st_write(prod_sf, here(build.dir, "top_crop_grid.gpkg"), append = FALSE)
+st_write(prod_sf, here(build.dir, "crops", "top_crop_grid.gpkg"), append = FALSE)
 
 modis_fires <- read_sf(here(build.dir, "fires", "modis_with_region.gpkg")) |> 
   select(fire_id) |> 

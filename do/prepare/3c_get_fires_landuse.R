@@ -12,4 +12,4 @@ modis_landuse <- fread(here(build.dir, "fires", "Firms_SEA_LandUse_Share.csv")) 
     forest50 = ifelse(tree_share > 50, 1, 0),
   )
 
-saveRDS(modis_landuse, here(build.dir, "modis_with_landuse.rds"))
+saveRDS(modis_landuse, here(build.dir, "fires", "modis_with_landuse.rds"))
