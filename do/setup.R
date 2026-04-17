@@ -11,7 +11,8 @@ pacman::p_load(
   rnaturalearth, rnaturalearthdata, # country/continent maps
   lmtest, fixest, # twfe + sun and abraham event study
   plotrix, cowplot, patchwork,
-  kableExtra, ggpubr
+  kableExtra, ggpubr,
+  Synth, pensynth # for synthetic control with many treated
 )
 rm(list = ls())
 gc()
