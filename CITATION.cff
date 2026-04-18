@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: >-
+  If you use this work, please cite the repository or the thesis PDF (paper.pdf).
+title: "Master's thesis code: Open-burning ban in Northern Thailand (2013-)"
+type: software
+authors:
+  - family-names: Glass
+    given-names: Iddo
+date-released: 2026-04-18
+repository-code: "https://github.com/glassiddo/Thesis"
+keywords:
+  - air pollution
+  - agricultural burning
+  - Thailand
+  - environmental economics
+  - causal inference
+preferred-citation:
+  type: report
+  title: "Master's thesis on the effects of the open-burning ban in Northern Thailand (2013-)"
+  authors:
+    - family-names: Glass
+      given-names: Iddo
+  year: 2026

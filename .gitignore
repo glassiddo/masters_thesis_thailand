@@ -17,3 +17,6 @@
 
 # Project-specific ignores
 do/himawari_wip.R
+
+# Public repo: exclude slides PDF (may contain third-party images)
+/slides.pdf
