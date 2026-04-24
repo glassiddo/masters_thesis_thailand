@@ -1,0 +1,44 @@
+// Study area definition
+var countries = ["Thailand",
+                "Lao People's Democratic Republic",
+                "Myanmar"
+                ];
+var regions = ee.FeatureCollection("FAO/GAUL/2015/level0")
+  .filter(ee.Filter.inList('ADM0_NAME', countries));
+
+var elevation = ee.Image('NASA/NASADEM_HGT/001')
+  .select('elevation')
+  .clip(regions);
+
+// Import FIRMS data from your assets
+var firms = ee.FeatureCollection("projects/ee-glassiddo/assets/modis_with_region_for_gee_1107");
+
+// Function to classify land use for each fire point
+var classifyFirePoints = function(feature) {
+  var point = feature.geometry();
+  var buffer = point.buffer(1000);  // 1 km buffer MODIS
+  // change to 375 for VIIRS
+
+  // Compute total pixels in the buffer
+  var avgElevation = elevation.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: buffer,
+    scale: 30, // data is in 30m resolution
+    maxPixels: 1e13
+  }).values().get(0);
+
+  return feature.set({
+    'avg_elevation': avgElevation
+  });
+};
+
+// Apply the function to all fire points
+var firePointsWithElevation = firms.map(classifyFirePoints);
+
+// Export to Google Drive
+Export.table.toDrive({
+  collection: firePointsWithElevation,
+  description: 'SEA_modis_elevation',
+  fileFormat: 'CSV',
+  selectors: ['fire_id', 'avg_elevation']
+});

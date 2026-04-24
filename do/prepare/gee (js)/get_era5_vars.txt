@@ -1,0 +1,81 @@
+// this is an old code! needs to be updated
+
+// Define countries and region of interest
+var countries = ['Myanmar', 'Thailand'];
+var region = ee.FeatureCollection('FAO/GAUL/2015/level1')
+  .filter(ee.Filter.inList('ADM0_NAME', countries))
+  .geometry();
+
+// Load ERA5 daily collection
+var era5 = ee.ImageCollection('ECMWF/ERA5/DAILY')
+  .filterDate('2002-11-01', '2021-05-01') // Start in Nov 2002 to allow for dry season of 2003
+  .map(function(img) { return img.clip(region); });
+
+// Function to compute annual mean or dry-season mean/sum
+function getYearlyStats(varName, statType, drySeason, isSum) {
+  return ee.ImageCollection(
+    ee.List.sequence(2003, 2020).map(function(year) {
+      year = ee.Number(year);
+      var start = drySeason ? ee.Date.fromYMD(year.subtract(1), 11, 1) : ee.Date.fromYMD(year, 1, 1);
+      var end   = drySeason ? ee.Date.fromYMD(year, 5, 1) : ee.Date.fromYMD(year.add(1), 1, 1);
+
+      var filtered = era5
+        .filterDate(start, end)
+        .select(varName);
+
+      var img = isSum ? filtered.sum() : filtered.mean();
+
+      return img
+        .rename(statType + '_' + varName + '_' + year.format())
+        .set('year', year)
+        .set('season', drySeason ? 'dry' : 'annual');
+    })
+  );
+}
+
+// Define all image collections (annual & dry-season)
+var temp_annual    = getYearlyStats('mean_2m_air_temperature', 'mean', false, false);
+var temp_dry       = getYearlyStats('mean_2m_air_temperature', 'mean', true, false);
+
+var pressure_annual = getYearlyStats('surface_pressure', 'mean', false, false);
+var pressure_dry    = getYearlyStats('surface_pressure', 'mean', true, false);
+
+var uwind_annual    = getYearlyStats('u_component_of_wind_10m', 'mean', false, false);
+var uwind_dry       = getYearlyStats('u_component_of_wind_10m', 'mean', true, false);
+
+var vwind_annual    = getYearlyStats('v_component_of_wind_10m', 'mean', false, false);
+var vwind_dry       = getYearlyStats('v_component_of_wind_10m', 'mean', true, false);
+
+var precip_annual   = getYearlyStats('total_precipitation', 'mean', false, false);
+var precip_dry      = getYearlyStats('total_precipitation', 'sum', true, true);  // Sum for dry season
+
+// Stack all bands into one image
+function stack(collections) {
+  return ee.Image.cat(collections.map(function(c) {
+    return ee.ImageCollection(c).toBands();
+  })).clip(region);
+}
+
+// Final stacked image with all variables
+var allStacked = stack([
+  temp_annual, temp_dry,
+  pressure_annual, pressure_dry,
+  uwind_annual, uwind_dry,
+  vwind_annual, vwind_dry,
+  precip_annual, precip_dry
+]);
+
+// Export (you can export other variables similarly)
+Export.image.toDrive({
+  image: allStacked,
+  description: 'ERA5_AllVars_AnnualAndDrySeason_2003_2020',
+  folder: 'GEE_Exports',
+  fileNamePrefix: 'era5_fullstats_th_mmr',
+  scale: 27830, // ERA5 native
+  crs: 'EPSG:4326',
+  region: region,
+  fileFormat: 'GeoTIFF',
+  maxPixels: 1e13,
+  formatOptions: { cloudOptimized: true }
+});
+

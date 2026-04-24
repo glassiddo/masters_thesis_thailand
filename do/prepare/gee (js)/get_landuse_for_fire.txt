@@ -1,0 +1,105 @@
+// Study area definition
+var countries = ["Thailand",
+                "Lao People's Democratic Republic",
+                "Myanmar"
+                ];
+var regions = ee.FeatureCollection("FAO/GAUL/2015/level0")
+  .filter(ee.Filter.inList('ADM0_NAME', countries));
+
+var myScale = 100;
+
+var firms = ee.FeatureCollection("projects/ee-glassiddo/assets/modis_with_region_for_gee_1107");
+
+var m10 = ee.Image('projects/glad/GLCLU2020/v2/LCLUC_2010')
+  .clip(regions);
+
+var cropsMask = m10.remap({
+  from: [244, 245, 246, 247], 
+  to: [1, 1, 1, 1], 
+  defaultValue: 0
+});
+
+var treesMask = m10.remap({
+  from: ee.List.sequence(25, 48),  // Tree classes
+  to: ee.List.repeat(1, 48 - 25 + 1), // replace all of them with 1
+  defaultValue: 0
+});
+
+// Function to classify land use for each fire point
+var classifyFirePoints = function(feature) {
+  var point = feature.geometry();
+  var buffer = point.buffer(1000);  // 1 km buffer
+
+  // Stack crop, tree, and total pixel count into one image
+  var totalMask = ee.Image(1).rename('total');
+  var stack = ee.Image.cat([
+    cropsMask.rename('crop'),
+    treesMask.rename('tree'),
+    totalMask
+  ]);
+
+  // Reduce once
+  var reduction = stack.reduceRegion({
+    reducer: ee.Reducer.sum(),
+    geometry: buffer,
+    scale: myScale,
+    maxPixels: 1e13
+  });
+
+  var cropPixels = ee.Number(reduction.get('crop'));
+  var treePixels = ee.Number(reduction.get('tree'));
+  var totalPixels = ee.Number(reduction.get('total'));
+
+  var cropShare = cropPixels.divide(totalPixels).multiply(100);
+  var treeShare = treePixels.divide(totalPixels).multiply(100);
+
+  return feature.set({
+    'crop_share': cropShare,
+    'tree_share': treeShare
+  });
+};
+
+// Apply the function to all fire points
+var firePointsWithLandUse = firms.map(classifyFirePoints);
+
+// Export to Google Drive
+Export.table.toDrive({
+  collection: firePointsWithLandUse,
+  description: 'Firms_SEA_LandUse_Share',
+  fileFormat: 'CSV',
+  selectors: ['fire_id', 'crop_share', 'tree_share']
+});
+  
+
+// Map.addLayer(cropsMask, {palette: ['white', 'yellow']}, 'crops')
+// Map.addLayer(treesMask, {palette: ['white', 'green']}, 'trees')
+// Map.addLayer(firePointsWithLandUse.limit(1000), {palette: ['black']}, 'firee')
+
+
+
+//////////////////////////// BATCHES ////////////////
+// Create a function to process the full dataset in batches
+var processBatches = function() {
+  // Calculate the number of batches needed
+  var totalFeatures = filteredFirms.size().getInfo();
+  var batchSize = 10000;  // Adjust based on performance
+  var batches = Math.ceil(totalFeatures / batchSize);
+  
+  // Process each batch
+  for (var i = 0; i < batches; i++) {
+    var start = i * batchSize;
+    var batch = filteredFirms.limit(batchSize, start);
+    var processedBatch = batch.map(classifyFirePoints);
+    
+    // Export this batch
+    Export.table.toDrive({
+      collection: processedBatch,
+      description: 'Firms_SEA_Batch_' + i,
+      fileFormat: 'SHP',
+      selectors: ['fire_id', 'land_use']
+    });
+  }
+};
+// Uncomment the line below to process the full dataset in batches
+// processBatches();
+
