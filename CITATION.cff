@@ -1,23 +1,17 @@
 cff-version: 1.2.0
 message: >-
   If you use this work, please cite the repository or the thesis PDF (paper.pdf).
-title: "Master's thesis code: Open-burning ban in Northern Thailand (2013-)"
+title: "Straw Burns in Fields, Forver? Displacement Effects of a Seasonal Burning Ban in Thailand"
 type: software
 authors:
   - family-names: Glass
     given-names: Iddo
 date-released: 2026-04-18
 repository-code: "https://github.com/glassiddo/Thesis"
-keywords:
-  - air pollution
-  - agricultural burning
-  - Thailand
-  - environmental economics
-  - causal inference
 preferred-citation:
   type: report
-  title: "Master's thesis on the effects of the open-burning ban in Northern Thailand (2013-)"
+  title: "Straw Burns in Fields, Forver? Displacement Effects of a Seasonal Burning Ban in Thailand"
   authors:
     - family-names: Glass
       given-names: Iddo
-  year: 2026
+  year: 2025
